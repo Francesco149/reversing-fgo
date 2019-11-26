@@ -870,59 +870,59 @@ not an issue, CatAndMouseGame has already been reversed and it wouldn't
 be hard to reverse it myself.
 
 ```c
-void CatAndMouseGame$$MouseInfoMsgPack(Array *param_1)
+void CatAndMouseGame$$MouseInfoMsgPack(Array *data)
 
 {
-  astruct_4 *paVar1;
-  undefined4 data;
-  int *piVar2;
-  Array *infoTop;
+  astruct_4 *catAndMouse;
+  undefined4 tmp;
+  int *piVar1;
+  Array *rgbKey;
   
   if (DAT_027ee855 == '\0') {
     FUN_003479b0(0x1d2d);
     DAT_027ee855 = '\x01';
   }
-  if (param_1 == (Array *)0x0) {
+  if (data == (Array *)0x0) {
     throwNullPointer(0);
   }
-  data = InstantiateArray(Class$byte[],param_1->length + -0x20);
+  tmp = InstantiateArray(Class$byte[],data->length + -0x20);
   if (((*(byte *)(Class$System.Text.Encoding + 0xbf) & 2) != 0) &&
      (*(int *)(Class$System.Text.Encoding + 0x70) == 0)) {
     FUN_0035803c();
   }
-  piVar2 = (int *)Encoding$$get_UTF8(0);
-  if (piVar2 == (int *)0x0) {
+  piVar1 = (int *)Encoding$$get_UTF8(0);
+  if (piVar1 == (int *)0x0) {
     throwNullPointer(0);
   }
-  infoTop = (Array *)(**(code **)(*piVar2 + 0x110))
-                               (piVar2,"W0Juh4cFJSYPkebJB9WpswNF51oa6Gm7",
-                                *(undefined4 *)(*piVar2 + 0x114));
+  rgbKey = (Array *)(**(code **)(*piVar1 + 0x110))
+                              (piVar1,"W0Juh4cFJSYPkebJB9WpswNF51oa6Gm7",
+                               *(undefined4 *)(*piVar1 + 0x114));
   if (((Class$CatAndMouseGame->field_0xbf & 2) != 0) && (Class$CatAndMouseGame->field_0x70 == 0)) {
     FUN_0035803c();
   }
-  paVar1 = Class$CatAndMouseGame;
-  Class$CatAndMouseGame->staticData->InfoTop = infoTop;
+  catAndMouse = Class$CatAndMouseGame;
+  Class$CatAndMouseGame->staticData->rgbKey = rgbKey;
                     /* void Copy (Array sourceArray, long sourceIndex, Array destinationArray, long
                        destinationIndex, long length) */
-  Array$$Copy(param_1,0,paVar1->staticData->infoData,0,0x20,0);
-  Array$$Copy(param_1,0x20,data,0,param_1->length + -0x20,0);
+  Array$$Copy(data,0,catAndMouse->staticData->rgbIV,0,0x20,0);
+  Array$$Copy(data,0x20,tmp,0,data->length + -0x20,0);
   CatAndMouseGame$$MouseHomeMsgPack
-            (data,Class$CatAndMouseGame->staticData->InfoTop,
-             Class$CatAndMouseGame->staticData->infoData,1);
+            (tmp,Class$CatAndMouseGame->staticData->rgbKey,Class$CatAndMouseGame->staticData->rgbIV,
+             1);
   return;
 }
 ```
 
-seems like it's supposed to copy the first 32 bytes of the data into
-InfoTop (I mapped the fields from that github repo) and the rest into
-data and pass both to `MouseHomeMsgPack`
+I already looked ahead and I know those 2 params are rgbKey and rgbIV
+for the decryptor. so the first 32 bytes of the data are the IV, the rest
+is the data and the rgbKey is a fixed string
 
 here they use this library: https://github.com/shogo82148/MiniMessagePack
 
 to decode MsgPack data
 
 ```c
-void CatAndMouseGame$$MouseHomeMsgPack(Array *data,Array *infoTop,Array *infoData,bool param_4)
+void CatAndMouseGame$$MouseHomeMsgPack(Array *data,Array *rgbKey,Array *rgbIV,bool param_4)
 
 {
   int packer;
@@ -937,7 +937,7 @@ void CatAndMouseGame$$MouseHomeMsgPack(Array *data,Array *infoTop,Array *infoDat
   if (((Class$CatAndMouseGame->field_0xbf & 2) != 0) && (Class$CatAndMouseGame->field_0x70 == 0)) {
     FUN_0035803c();
   }
-  msgPackData = CatAndMouseGame$$MouseHomeSub(data,infoTop,infoData,param_4);
+  msgPackData = CatAndMouseGame$$MouseHomeSub(data,rgbKey,rgbIV,param_4);
   if (packer == 0) {
     throwNullPointer(0);
   }
@@ -950,7 +950,7 @@ MouseHomeSub looks exactly like MouseHomeMain in that Fgo repository
 https://github.com/Hengle/Fgo/blob/master/CatAndMouseGame.cs#L261
 
 ```c
-Array * CatAndMouseGame$$MouseHomeSub(Array *data,Array *infoTop,Array *infoData,bool isPress)
+Array * CatAndMouseGame$$MouseHomeSub(Array *data,Array *rgbKey,Array *rgbIV,bool isPress)
 
 {
   undefined4 transform;
@@ -985,8 +985,7 @@ Array * CatAndMouseGame$$MouseHomeSub(Array *data,Array *infoTop,Array *infoData
                     /* BlockSize = 0x100 */
   (**(code **)(*stream + 0xf8))(stream,0x100,*(undefined4 *)(*stream + 0xfc));
                     /* CreateDecryptor */
-  transform = (**(code **)(*stream + 0x178))
-                        (stream,infoTop,infoData,*(undefined4 *)(*stream + 0x17c));
+  transform = (**(code **)(*stream + 0x178))(stream,rgbKey,rgbIV,*(undefined4 *)(*stream + 0x17c));
   if (data == (Array *)0x0) {
     throwNullPointer(0);
   }
