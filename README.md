@@ -1059,4 +1059,24 @@ Array * CatAndMouseGame$$MouseHomeSub(Array *data,Array *rgbKey,Array *rgbIV,boo
 yeah, this shouldn't be a problem to implement, just a bit tedious to
 stitch together
 
+I wrote this basic test with hardcoded data from my game's requests and
+sure enough, it spits out an object with the folderName, animalName,
+zooName fields, and the folderName matches the value in my request
+
+```python
+  assetbundle = b64decode("...")
+  rgb_iv = assetbundle[:32]
+  rgb_key = "W0Juh4cFJSYPkebJB9WpswNF51oa6Gm7"
+  encrypted = assetbundle[32:]
+  rjn = RijndaelCbc(
+      key=rgb_key,
+      iv=rgb_iv,
+      padding=Pkcs7Padding(32),
+      block_size=32
+  )
+  decrypted = rjn.decrypt(encrypted)
+  decrypted = gzip.decompress(decrypted)
+  print(umsgpack.unpackb(decrypted))
+```
+
 to be continued...
