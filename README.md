@@ -1091,4 +1091,7 @@ I ended up hooking ComputeHashData to verify what's being hashed for the
 authCode because my codes were not matching. it turns out that the game
 sorts the form fields alphabetically before hashing for the authCode
 
+also the sorted form fields in the hashed data should NOT be url-encoded.
+after these changes my hashes match and everything works as expected
+
 to be continued...
