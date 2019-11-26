@@ -1079,4 +1079,16 @@ zooName fields, and the folderName matches the value in my request
   print(umsgpack.unpackb(decrypted))
 ```
 
+so, for user_state i did a few tests and this seems to yield correct
+results though I'm not sure it's 100% correct yet
+
+```python
+  crc = binascii.crc32(j["folderName"].encode("utf-8"))
+  user_state = ~(last_access_time >> 2) ^ user_id & crc
+```
+
+I ended up hooking ComputeHashData to verify what's being hashed for the
+authCode because my codes were not matching. it turns out that the game
+sorts the form fields alphabetically before hashing for the authCode
+
 to be continued...
