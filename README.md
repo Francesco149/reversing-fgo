@@ -1094,4 +1094,365 @@ sorts the form fields alphabetically before hashing for the authCode
 also the sorted form fields in the hashed data should NOT be url-encoded.
 after these changes my hashes match and everything works as expected
 
+okay so i got to the battle result request and oh boy this thing has a huge
+result field that's encrypted with `CatAndMouseGame$$CatGame5` . I'm not
+gonna paste the entire thing, but it contains info about various items and
+some checksums that depend on items and userId
+
+let's focus on implementing CatGame5 first so we can decode the contents
+
+seems to be the same encryption as before but no msgpack and rgbKey is
+xored with 4 and rgbIV is xored with 8, also no compression. also, if
+compression was enabled it would be bzip instead of gzip
+
+```c
+void CatAndMouseGame$$CatGame5(undefined4 param_1)
+
+{
+  byte bVar1;
+  int rgbKey2;
+  int rgbIV2;
+  int *piVar2;
+  undefined4 data;
+  undefined4 uVar3;
+  Array *pAVar4;
+  int iVar5;
+  uint uVar6;
+  
+  if (DAT_027ee84e == '\0') {
+    FUN_003479b0(0x1d07);
+    DAT_027ee84e = '\x01';
+  }
+  if (((Class$CatAndMouseGame->field_0xbf & 2) != 0) && (Class$CatAndMouseGame->field_0x70 == 0)) {
+    FUN_0035803c();
+  }
+  pAVar4 = Class$CatAndMouseGame->staticData->rgbKey2;
+  if (pAVar4 == (Array *)0x0) {
+    throwNullPointer(0);
+  }
+  rgbKey2 = InstantiateArray(Class$byte[],pAVar4->length);
+  pAVar4 = Class$CatAndMouseGame->staticData->rgbIV2;
+  if (pAVar4 == (Array *)0x0) {
+    throwNullPointer(0);
+  }
+  rgbIV2 = InstantiateArray(Class$byte[],pAVar4->length);
+  if (((*(byte *)(Class$System.Text.Encoding + 0xbf) & 2) != 0) &&
+     (*(int *)(Class$System.Text.Encoding + 0x70) == 0)) {
+    FUN_0035803c();
+  }
+  piVar2 = (int *)Encoding$$get_UTF8(0);
+  if (piVar2 == (int *)0x0) {
+    throwNullPointer(0);
+  }
+  data = (**(code **)(*piVar2 + 0x110))(piVar2,param_1,*(undefined4 *)(*piVar2 + 0x114));
+  iVar5 = 0x10;
+  while( true ) {
+    if (((Class$CatAndMouseGame->field_0xbf & 2) != 0) && (Class$CatAndMouseGame->field_0x70 == 0))
+    {
+      FUN_0035803c();
+    }
+    uVar6 = iVar5 - 0x10;
+    pAVar4 = Class$CatAndMouseGame->staticData->rgbKey2;
+    if (pAVar4 == (Array *)0x0) {
+      throwNullPointer(0);
+    }
+    if (pAVar4->length <= (int)uVar6) break;
+    if (((Class$CatAndMouseGame->field_0xbf & 2) != 0) && (Class$CatAndMouseGame->field_0x70 == 0))
+    {
+      FUN_0035803c();
+    }
+    pAVar4 = Class$CatAndMouseGame->staticData->rgbKey2;
+    if (pAVar4 == (Array *)0x0) {
+      throwNullPointer(0);
+    }
+    if ((uint)pAVar4->length <= uVar6) {
+      uVar3 = IndexOutOfRangeException();
+      throw(uVar3,0,0);
+    }
+    bVar1 = *(byte *)(&pAVar4->field_0x0 + iVar5);
+    if (rgbKey2 == 0) {
+      throwNullPointer(0);
+    }
+    if (*(uint *)(rgbKey2 + 0xc) <= uVar6) {
+      uVar3 = IndexOutOfRangeException();
+      throw(uVar3,0,0);
+    }
+    *(byte *)(rgbKey2 + iVar5) = bVar1 ^ 4;
+    iVar5 = iVar5 + 1;
+  }
+  iVar5 = 0x10;
+  while( true ) {
+    if (((Class$CatAndMouseGame->field_0xbf & 2) != 0) && (Class$CatAndMouseGame->field_0x70 == 0))
+    {
+      FUN_0035803c();
+    }
+    uVar6 = iVar5 - 0x10;
+    pAVar4 = Class$CatAndMouseGame->staticData->rgbIV2;
+    if (pAVar4 == (Array *)0x0) {
+      throwNullPointer(0);
+    }
+    if (pAVar4->length <= (int)uVar6) break;
+    if (((*(ushort *)&Class$CatAndMouseGame->field_0xbe & 0x200) != 0) &&
+       (Class$CatAndMouseGame->field_0x70 == 0)) {
+      FUN_0035803c();
+    }
+    pAVar4 = Class$CatAndMouseGame->staticData->rgbIV2;
+    if (pAVar4 == (Array *)0x0) {
+      throwNullPointer(0);
+    }
+    if ((uint)pAVar4->length <= uVar6) {
+      uVar3 = IndexOutOfRangeException();
+      throw(uVar3,0,0);
+    }
+    bVar1 = *(byte *)(&pAVar4->field_0x0 + iVar5);
+    if (rgbIV2 == 0) {
+      throwNullPointer(0);
+    }
+    if (*(uint *)(rgbIV2 + 0xc) <= uVar6) {
+      uVar3 = IndexOutOfRangeException();
+      throw(uVar3,0,0);
+    }
+    *(byte *)(rgbIV2 + iVar5) = bVar1 ^ 8;
+    iVar5 = iVar5 + 1;
+  }
+  if (((*(ushort *)&Class$CatAndMouseGame->field_0xbe & 0x200) != 0) &&
+     (Class$CatAndMouseGame->field_0x70 == 0)) {
+    FUN_0035803c();
+  }
+  CatAndMouseGame$$CatHome(data,rgbKey2,rgbIV2,0);
+  return;
+}
+
+undefined4
+CatAndMouseGame$$CatHome(undefined4 data,undefined4 rgbKey2,undefined4 rgbIV2,undefined4 compressed)
+
+{
+  int iVar1;
+  undefined4 uVar2;
+  
+  if (DAT_027ee863 == '\0') {
+    FUN_003479b0(0x1d11);
+    DAT_027ee863 = '\x01';
+  }
+  if (((Class$CatAndMouseGame->field_0xbf & 2) != 0) && (Class$CatAndMouseGame->field_0x70 == 0)) {
+    FUN_0035803c();
+  }
+  iVar1 = CatAndMouseGame$$CatHomeMain(data,rgbKey2,rgbIV2,compressed);
+  if (iVar1 != 0) {
+    if (((*(byte *)(Class$System.Convert + 0xbf) & 2) != 0) &&
+       (*(int *)(Class$System.Convert + 0x70) == 0)) {
+      FUN_0035803c();
+    }
+    uVar2 = Convert$$ToBase64String(iVar1,0);
+    return uVar2;
+  }
+  return 0;
+}
+
+undefined4
+CatAndMouseGame$$CatHomeMain(int data,undefined4 rgbKey2,undefined4 rgbIV2,int compressed)
+
+{
+  undefined4 *puVar1;
+  int *piVar2;
+  undefined4 uVar3;
+  int *piVar4;
+  int *piVar5;
+  undefined4 auStack56 [3];
+  undefined4 *local_2c;
+  
+  if (DAT_027ee867 == '\0') {
+    FUN_003479b0(0x1d0f);
+    DAT_027ee867 = '\x01';
+  }
+  local_2c = auStack56;
+  piVar2 = (int *)thunk_FUN_00382384(Class$System.Security.Cryptography.RijndaelManaged);
+  RijndaelManaged$$.ctor(piVar2,0);
+  if (piVar2 == (int *)0x0) {
+    throwNullPointer(0);
+  }
+  (**(code **)(*piVar2 + 0x168))(piVar2,2,*(undefined4 *)(*piVar2 + 0x16c));
+  (**(code **)(*piVar2 + 0x158))(piVar2,1,*(undefined4 *)(*piVar2 + 0x15c));
+  (**(code **)(*piVar2 + 0x138))(piVar2,0x100,*(undefined4 *)(*piVar2 + 0x13c));
+  (**(code **)(*piVar2 + 0xf8))(piVar2,0x100,*(undefined4 *)(*piVar2 + 0xfc));
+  uVar3 = (**(code **)(*piVar2 + 0x188))(piVar2,rgbKey2,rgbIV2,*(undefined4 *)(*piVar2 + 0x18c));
+  if (data == 0) {
+    throwNullPointer(0);
+  }
+  piVar2 = (int *)thunk_FUN_00382384(Class$System.IO.MemoryStream);
+  MemoryStream$$.ctor(piVar2,((*(int *)(data + 0xc) + 0xff) / 0x100) * 0x100,0);
+  piVar4 = (int *)thunk_FUN_00382384(Class$System.Security.Cryptography.CryptoStream);
+  CryptoStream$$.ctor(piVar4,piVar2,uVar3,1,0);
+  puVar1 = local_2c;
+  if (compressed == 0) {
+    if (piVar4 == (int *)0x0) {
+      throwNullPointer(0);
+    }
+    (**(code **)(*piVar4 + 0x178))
+              (piVar4,data,0,*(undefined4 *)(data + 0xc),*(undefined4 *)(*piVar4 + 0x17c));
+    CryptoStream$$FlushFinalBlock(piVar4,0);
+  }
+  else {
+    piVar5 = (int *)thunk_FUN_00382384(Class$ICSharpCode.SharpZipLib.BZip2.BZip2OutputStream);
+    BZip2OutputStream$$.ctor(piVar5,piVar4,1,0);
+    if (piVar5 == (int *)0x0) {
+      throwNullPointer(0);
+    }
+    (**(code **)(*piVar5 + 0x178))
+              (piVar5,data,0,*(undefined4 *)(data + 0xc),*(undefined4 *)(*piVar5 + 0x17c));
+    (**(code **)(*piVar5 + 0x128))(piVar5,*(undefined4 *)(*piVar5 + 300));
+  }
+  if (piVar2 == (int *)0x0) {
+    throwNullPointer(0);
+  }
+  uVar3 = (**(code **)(*piVar2 + 0x1c0))(piVar2,*(undefined4 *)(*piVar2 + 0x1c4));
+  *puVar1 = 0xc3;
+  (**(code **)(*piVar2 + 0x128))(piVar2,*(undefined4 *)(*piVar2 + 300));
+  if (piVar4 != (int *)0x0) {
+    (**(code **)(*piVar4 + 0x128))(piVar4,*(undefined4 *)(*piVar4 + 300));
+  }
+  return uVar3;
+}
+```
+
+most likely rgbKey2 and rgbIV2 are set by the other two fields in that
+msgpack response from earlier
+
+```c
+        iVar7 = FUN_006eb2a0(iVar2,"animalName",Method$Dictionary_string_-object_.ContainsKey());
+        if (iVar7 == 1) {
+          piVar3 = (int *)FUN_006e96c4(iVar2,"animalName",
+                                       Method$Dictionary_string_-object_.get_Item());
+          if (piVar3 == (int *)0x0) {
+            throwNullPointer(0);
+          }
+          uVar5 = (**(code **)(*piVar3 + 0xd8))(piVar3,*(undefined4 *)(*piVar3 + 0xdc));
+          if (((Class$CatAndMouseGame->field_0xbf & 2) != 0) &&
+             (Class$CatAndMouseGame->field_0x70 == 0)) {
+            FUN_0035803c();
+          }
+          CatAndMouseGame$$ThirdHomeBuilding(uVar5,0);
+        }
+        iVar7 = FUN_006eb2a0(iVar2,"zooName",Method$Dictionary_string_-object_.ContainsKey());
+        if (iVar7 == 1) {
+          piVar3 = (int *)FUN_006e96c4(iVar2,"zooName",Method$Dictionary_string_-object_.get_Item())
+          ;
+          if (piVar3 == (int *)0x0) {
+            throwNullPointer(0);
+          }
+          uVar5 = (**(code **)(*piVar3 + 0xd8))(piVar3,*(undefined4 *)(*piVar3 + 0xdc));
+          if (((Class$CatAndMouseGame->field_0xbf & 2) != 0) &&
+             (Class$CatAndMouseGame->field_0x70 == 0)) {
+            FUN_0035803c();
+          }
+          CatAndMouseGame$$ForthHomeBuilding(uVar5,0);
+        }
+```
+
+animalName sets the value of rgbKey2 and rgbIV2 as well as some third
+key/iv pair. zooName sets yet another key/iv pair that we haven't yet
+encountered
+
+we only care about the part that sets key2/iv2 for now:
+
+```c
+void CatAndMouseGame$$ThirdHomeBuilding(undefined4 animalName)
+
+{
+  int iVar1;
+  Array *utf8data;
+  uint utf8datalen;
+  undefined4 uVar2;
+  code *pcVar3;
+  char b;
+  Array *arr;
+  uint i;
+  
+  /* .... */
+  iVar1 = Application$$get_isPlaying(0);
+  if (iVar1 == 1) {
+    /* .... */
+    utf8data = (Array *)Encoding$$get_UTF8(0);
+    /* .... */
+    pcVar3 = *(code **)(*(int *)utf8data + 0x110);
+    uVar2 = *(undefined4 *)(*(int *)utf8data + 0x114);
+  }
+  /* .... */
+  utf8data = (Array *)(*pcVar3)(utf8data,animalName,uVar2);
+  if (((Class$CatAndMouseGame->field_0xbf & 2) != 0) && (Class$CatAndMouseGame->field_0x70 == 0)) {
+    FUN_0035803c();
+  }
+  Array$$Copy(utf8data,0,Class$CatAndMouseGame->staticData->rgbKey2,0,0x20,0);
+  arr = Class$CatAndMouseGame->staticData->rgbIV2;
+  if (utf8data == (Array *)0x0) {
+    throwNullPointer(0);
+  }
+  Array$$Copy(utf8data,0x20,arr,0,utf8data->length + -0x20,0);
+  /* .... */
+```
+
+first 32 bytes are the rgbKey,rest is the rgbIV
+
+I implemented this alongside my previous msgpack and userState tests, and
+it works - I can now decrypt the battle result field from my requests log:
+
+```python
+  assetbundle = CENSORED
+  k = "W0Juh4cFJSYPkebJB9WpswNF51oa6Gm7"
+  j = FateGOHttpApi.mouse_info_msgpack(k, assetbundle)
+  crc = binascii.crc32(j["folderName"].encode("utf-8"))
+  last_access_time = CENSORED
+  user_id = CENSORED
+  user_state = ~(last_access_time >> 2) ^ user_id & crc
+  print(j)
+  print(user_state)
+
+  # data sent in battle result request
+  result = unquote(CENSORED)
+  rgb_key = bytes([x ^ 4 for x in j["animalName"][:32].encode("utf-8")])
+  rgb_iv = bytes([x ^ 8 for x in j["animalName"][32:].encode("utf-8")])
+  rjn = RijndaelCbc(
+      key=rgb_key,
+      iv=rgb_iv,
+      padding=Pkcs7Padding(32),
+      block_size=32
+  )
+  decrypted = rjn.decrypt(b64decode(result))
+  print(json.dumps(json.loads(decrypted), indent=2))
+```
+
+and the output:
+
+```
+{'folderName': 'CENSORED', 'animalName': 'CENSORED', 'zooName': 'CENSORED'}
+CENSORED
+{
+  "battleId": CENSORED,
+  "battleResult": 1,
+  "winResult": 1,
+  "scores": "",
+  "action": "{ \"logs\":[{\"uid\":1,\"ty\":3},CENSORED], \"dt\":[{\"uniqueId\":4,\"hp\":0,\"atk\":900}], \"hd\":\"AA==\", \"data\":\"AA==\" }",
+  "raidResult": "[]",
+  "superBossResult": "[]",
+  "elapsedTurn": 5,
+  "recordType": 1,
+  "recordValueJson": {
+    "turnMaxDamage": 0,
+    "knockdownNum": 0,
+    "totalDamageToAliveEnemy": 0
+  },
+  "tdPlayed": "[{\"userSvtId\":1,\"seqId\":CENSORED}]",
+  "usedEquipSkillList": {},
+  "aliveUniqueIds": [],
+  "battleStatus": CENSORED,
+  "voicePlayedList": "[[CENSORED,1],[CENSORED,4]]",
+  "usedTurnList": [
+    5
+  ]
+}
+```
+
+this contains the entire turn log, basically every little detail about
+what you did during the battle
+
 to be continued...
